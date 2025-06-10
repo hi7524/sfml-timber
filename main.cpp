@@ -2,9 +2,14 @@
 
 int main()
 {
-    sf::RenderWindow window(sf::VideoMode(200, 200), "SFML works!");
-    sf::CircleShape shape(100.f);
-    shape.setFillColor(sf::Color::Green);
+    sf::RenderWindow window(sf::VideoMode(1920, 1080), "Timber!");
+   
+    sf::Texture textureBackground; // 배경화면 텍스쳐
+    textureBackground.loadFromFile("graphics/background.png"); // 배경화면 텍스쳐의 리소스 경로 설정
+
+    sf::Sprite spriteBackground; // 그리기용 객체
+    spriteBackground.setTexture(textureBackground); // 그리기용 객체의 텍스쳐 설정
+
 
     while (window.isOpen())
     {
@@ -16,9 +21,10 @@ int main()
         }
 
         window.clear();
-        window.draw(shape);
+        window.draw(spriteBackground); // 배경화면 그리기
         window.display();
     }
+
 
     return 0;
 }
