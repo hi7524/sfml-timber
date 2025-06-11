@@ -1,4 +1,6 @@
 #include <SFML/Graphics.hpp>
+#include <ctime>
+#include <cstdlib>
 
 int main()
 {
@@ -37,7 +39,7 @@ int main()
     spriteBee.setTexture(textureBee);
 
 
-    // 위치 설정
+    // 초기 위치 설정
     spriteTree.setOrigin(textureTree.getSize().x * 0.5f, 0.0f);
     spriteTree.setPosition(1920 * 0.5f, 0.0f);
 
@@ -48,21 +50,33 @@ int main()
 
     spriteBee.setPosition(30.0f, 800.0f);
     // spriteTree.setPosition(1920 * 0.5f - textureTree.getSize().x * 0.5f, 0);
-    
+
+
+    // 초기 설정
+    sf::Vector2f velocity = { 200.0f, 0.0f };
+
+    sf::Clock clock;
 
     while (window.isOpen())
     {
+        sf::Time time = clock.restart();    // 시간 초기화까지 누적된 시간 반환
+        float deltaTime = time.asSeconds(); 
+
+        // 이벤트 루프
         sf::Event event;
         while (window.pollEvent(event))
         {
             if (event.type == sf::Event::Closed)
                 window.close();
         }
+        
+        // 벌 이동
+        sf::Vector2f pos = spriteBee.getPosition();
+        pos += velocity * deltaTime;
+        spriteBee.setPosition(pos);
 
+        // 화면에 출력
         window.clear();
-
-
-        // Sprite 그리기
         window.draw(spriteBackground);
 
         for (int i = 0; i < 3; i++)
@@ -73,6 +87,7 @@ int main()
         window.draw(spriteTree);
         
         window.draw(spriteBee);
+
 
         window.display();
     }
