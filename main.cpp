@@ -6,7 +6,10 @@
 void MoveSprite(sf::Sprite& target, sf::Vector2f dir, float speed);
 
 float deltaTime;
-
+float curTime = 0;
+int randomX = 0;
+int randomY = 0;
+float nextActionTime = 0;
 int main()
 {
     // 창 설정
@@ -42,8 +45,9 @@ int main()
     sf::Sprite spriteTree; // 나무
     spriteTree.setTexture(textureTree);
 
-    sf::Sprite spriteBee;  // 벌
-    spriteBee.setTexture(textureBee);
+    sf::Sprite spriteBee[2];  // 벌
+    for (int i = 0; i < 2; i++)
+    spriteBee[i].setTexture(textureBee);
 
 
     // 초기 설정
@@ -89,21 +93,23 @@ int main()
     sf::Vector2f beeDir = { 0.0f, 0.0f };
     float beeSpeed = 100;
 
+
     float random = (float)rand() / RAND_MAX;
     if (random < 0.5f)
     {
         beeDir.x = 1.0f;
-        spriteBee.setScale(-1.0f, 1.0f);
-        spriteBee.setPosition(textureBee.getSize().x , 800);
+        spriteBee[1].setScale(-1.0f, 1.0f);
+        spriteBee[1].setPosition(textureBee.getSize().x , 800);
     }
     else
     {
         beeDir.x = -1.0f;
-        spriteBee.setScale(1, 1);
-        spriteBee.setPosition(1920 + textureBee.getSize().x, 800);
+        spriteBee[1].setScale(1, 1);
+        spriteBee[1].setPosition(1920 + textureBee.getSize().x, 800);
     }
     beeSpeed = rand() % 200 + 100;
 
+    spriteBee[0].setPosition(500, 500);
 
     sf::Clock clock;
 
@@ -143,38 +149,61 @@ int main()
             MoveSprite(spriteCloud[i], cloudDir[i], cloudSpeed[i]);
         }
 
-
-        
         // 화변 밖으로 나갈 경우 재 실행
-        if (spriteBee.getPosition().x < -200 || spriteBee.getPosition().x > 1920 + 200)
+        if (spriteBee[1].getPosition().x < -200 || spriteBee[1].getPosition().x > 1920 + 200)
         {
             float random = (float)rand() / RAND_MAX;
             if (random < 0.5f)
             {
                 beeDir.x = 1.0f;
-                spriteBee.setScale(-1.0f, 1.0f);
-                spriteBee.setPosition(textureBee.getSize().x, 800);
+                spriteBee[1].setScale(-1.0f, 1.0f);
+                spriteBee[1].setPosition(textureBee.getSize().x, 800);
             }
             else
             {
                 beeDir.x = -1.0f;
-                spriteBee.setScale(1, 1);
-                spriteBee.setPosition(1920 + textureBee.getSize().x, 800);
+                spriteBee[1].setScale(1, 1);
+                spriteBee[1].setPosition(1920 + textureBee.getSize().x, 800);
             }
             beeSpeed = rand() % 200 + 100;
         }
 
         // 벌 이동
         //MoveSprite(spriteBee, beeDir, beeSpeed);
-        
-        sf::Vector2f pos = spriteBee.getPosition();
+
+        sf::Vector2f pos = spriteBee[1].getPosition();
         float d = pos.x * 3.14f / 180;
 
+        // 벌 이동 (포물선 운동)
         pos += beeDir * beeSpeed * deltaTime;
         pos.y = (sin(d) * 50) + 800;
-        spriteBee.setPosition(pos);
+        spriteBee[1].setPosition(pos);
 
+        // 벌 이동 (랜덤 이동)
 
+        sf::Vector2f beePos0 = spriteBee[0].getPosition();
+
+        
+
+        curTime += deltaTime;
+
+        if (curTime >= nextActionTime)
+        {
+            randomX = rand() % 3 - 1;
+            randomY = rand() % 3 - 1;
+
+            nextActionTime = curTime + 3;
+        }
+    
+        sf::Vector2f beeDir0 = { (float)randomX , (float)randomY };
+        beePos0 += beeDir0 * 100.0f * deltaTime;
+        spriteBee[0].setPosition(beePos0);
+
+        /*
+        sf::Vector2f pos = target.getPosition();
+        pos += dir * speed * deltaTime;
+        target.setPosition(pos);
+        */
 
         // 화면에 출력
         window.clear();
@@ -187,7 +216,8 @@ int main()
 
         window.draw(spriteTree);
 
-        window.draw(spriteBee);
+        for (int i = 0; i < 2; i++)
+        window.draw(spriteBee[i]);
 
 
         window.display();
