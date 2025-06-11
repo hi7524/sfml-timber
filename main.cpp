@@ -1,6 +1,7 @@
 #include <SFML/Graphics.hpp>
 #include <ctime>
 #include <cstdlib>
+#include <math.h>
 
 void MoveSprite(sf::Sprite& target, sf::Vector2f dir, float speed);
 
@@ -45,29 +46,24 @@ int main()
     spriteBee.setTexture(textureBee);
 
 
-    // 초기 위치 설정
+    // 초기 설정
+
+    // 나무
     spriteTree.setOrigin(textureTree.getSize().x * 0.5f, 0.0f);
     spriteTree.setPosition(1920 * 0.5f, 0.0f);
 
+    // 구름
     for (int i = 0; i < 3; i++)
     {
         spriteCloud[i].setPosition(0.0f, textureCloud.getSize().y * i);
     }
 
-    //spriteBee.setPosition(30.0f, 800.0f);
-    // spriteTree.setPosition(1920 * 0.5f - textureTree.getSize().x * 0.5f, 0);
-
-
-    // 초기 설정
-    sf::Vector2f beeVelocity = { 100.0f + float(100 * rand() % 3) , 0.0f }; // 벌
+    // 벌
+    sf::Vector2f beeVelocity = { 100.0f + float(100 * rand() % 3) , 0.0f };
 
     // 구름
-    
     sf::Vector2f cloudDir[3];
-    float cloudSpeed[3];
-
-    //sf::Vector2f cloudVelocity[3];
-    
+    float cloudSpeed[3];    
     for (int i = 0; i < 3; i++)
     {
         // 속도
@@ -113,7 +109,7 @@ int main()
 
     while (window.isOpen())
     {
-        sf::Time time = clock.restart();    // 시간 초기화까지 누적된 시간 반환
+        sf::Time time = clock.restart(); // 시간 초기화까지 누적된 시간 반환
         deltaTime = time.asSeconds();
 
         // 이벤트 루프
@@ -167,8 +163,17 @@ int main()
             }
             beeSpeed = rand() % 200 + 100;
         }
+
         // 벌 이동
-        MoveSprite(spriteBee, beeDir, beeSpeed);
+        //MoveSprite(spriteBee, beeDir, beeSpeed);
+        
+        sf::Vector2f pos = spriteBee.getPosition();
+        float d = pos.x * 3.14f / 180;
+
+        pos += beeDir * beeSpeed * deltaTime;
+        pos.y = (sin(d) * 50) + 800;
+        spriteBee.setPosition(pos);
+
 
 
         // 화면에 출력
