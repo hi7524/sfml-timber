@@ -6,8 +6,6 @@ void MoveSprite(sf::Sprite& target, sf::Vector2f dir, float speed);
 bool IsOutOfScreen(sf::Sprite& sprite, sf::Texture texture);
 void SpawnSprite(sf::Sprite& sprite, sf::Texture texture, sf::Vector2f& dir, float posY);
 
-
-
 enum class Side { LEFT, RIGHT, NONE };
 
 void updateBranches(Side* branches, int size)
@@ -65,6 +63,9 @@ int main()
     sf::Texture textureBranch;
     textureBranch.loadFromFile("graphics/branch.png");
 
+    sf::Texture textureAxe;
+    textureAxe.loadFromFile("graphics/axe.png");
+
 
     // 스프라이트
     sf::Sprite spriteBackground; // 배경        
@@ -83,9 +84,15 @@ int main()
 
     sf::Sprite spritePlayer;    // 플레이어
     spritePlayer.setTexture(texturePlayer);
-    spritePlayer.setOrigin(texturePlayer.getSize().x * 0.5f + textureTree.getSize().x * -0.5f - 200, texturePlayer.getSize().y);
+    spritePlayer.setOrigin(texturePlayer.getSize().x + textureTree.getSize().x * -0.5f - 200, texturePlayer.getSize().y);
     spritePlayer.setPosition(1920 * 0.5, 950);
     Side sidePlayer = Side::LEFT;
+
+    sf::Sprite spriteAxe; // 도끼
+       
+    spriteAxe.setTexture(textureAxe);
+    spriteAxe.setOrigin(texturePlayer.getSize().x * 0.5f + textureTree.getSize().x * -0.5f, texturePlayer.getSize().y * 0.4f);
+    spriteAxe.setPosition(spritePlayer.getPosition().x, spritePlayer.getPosition().y);
     
     
                                 // 나뭇가지
@@ -144,10 +151,21 @@ int main()
         
     sf::Clock clock;
 
+    bool isLeft = false;
+    bool isRight = false;
+   
+
     while (window.isOpen())
     {
         sf::Time time = clock.restart(); // 시간 초기화까지 누적된 시간 반환
         deltaTime = time.asSeconds();
+        
+        bool isLeftDown = false;
+        bool isLeftUp = false;
+        bool isRightDown = false;
+        bool isRightUp = false;
+
+        bool drawAxe = false;
 
         // 이벤트 루프
         sf::Event event;
@@ -163,19 +181,78 @@ int main()
                     switch (event.key.code)
                     {
                         case sf::Keyboard::Left:
-                            sidePlayer = Side::LEFT;
-                            updateBranches(sideBranch,  NUM_BRANCHES);
+                            if (!isLeft)
+                            {
+                                isLeftDown = true;
+                            }   
+                            isLeft = true;
                             break;
 
                         case sf::Keyboard::Right:
-                            sidePlayer = Side::RIGHT;
-                            updateBranches(sideBranch, NUM_BRANCHES);
+                            if (!isRight)
+                            {
+                                isRightDown = true;
+                            }
+                            isRight = true;
                             break;
+                            //sidePlayer = Side::LEFT;
+                            // updateBranches(sideBranch, NUM_BRANCHES);
+                            //sidePlayer = Side::RIGHT;
+                            //updateBranches(sideBranch, NUM_BRANCHES);
                     }
                     break;
+                
+
+                case sf::Event::KeyReleased:
+                {
+                    switch (event.key.code)
+                    {
+                        case sf::Keyboard::Left:
+                            isLeft = false;
+                            isLeftUp = true;
+                            break;
+                        case sf::Keyboard::Right:
+                            isRight = false;
+                            isRightUp = true;
+                            break;
+                    }
+                }
             }
         }
        
+        // 업데이트
+        if (isRightDown || isLeftDown)
+        {
+            if (isLeft)
+            {
+                sidePlayer = Side::LEFT;
+
+                spriteAxe.setScale(-1, 1);
+            }
+            if (isRightDown)
+            {
+                sidePlayer = Side::RIGHT;
+                spriteAxe.setScale(1, 1);
+            }
+
+            updateBranches(sideBranch, NUM_BRANCHES);
+            
+            if (sidePlayer == sideBranch[NUM_BRANCHES - 1])
+            {
+                printf("맞음\n");
+            }
+        }
+
+        if (isLeft && !isLeftUp || isRight && !isRightUp)
+        {
+      
+            drawAxe = true;
+        }
+        else
+        {
+            drawAxe = false;
+        }
+
         // 구름 이동
         for (int i = 0; i < 3; i++)
         {
@@ -277,7 +354,10 @@ int main()
 
         window.draw(spritePlayer); // 플레이어
         
-        
+        if (drawAxe)
+        {
+            window.draw(spriteAxe);
+        }
 
         window.display();
 
