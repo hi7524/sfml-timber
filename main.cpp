@@ -155,6 +155,7 @@ int main()
     bool isRight = false;
    
     bool pauseGame = false;
+    bool drawAxe = false;
 
     while (window.isOpen())
     {
@@ -166,7 +167,6 @@ int main()
         bool isRightDown = false;
         bool isRightUp = false;
 
-        bool drawAxe = false;
 
         // 이벤트 루프
         sf::Event event;
@@ -234,7 +234,6 @@ int main()
                 if (isLeft)
                 {
                     sidePlayer = Side::LEFT;
-
                     spriteAxe.setScale(-1, 1);
                 }
                 if (isRightDown)
@@ -252,9 +251,8 @@ int main()
                 }
             }
 
-            if (isLeft && !isLeftUp || isRight && !isRightUp)
+            if (isLeft  || isRight)
             {
-
                 drawAxe = true;
             }
             else
