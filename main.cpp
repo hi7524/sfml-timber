@@ -154,6 +154,7 @@ int main()
     bool isLeft = false;
     bool isRight = false;
    
+    bool pauseGame = false;
 
     while (window.isOpen())
     {
@@ -195,6 +196,11 @@ int main()
                             }
                             isRight = true;
                             break;
+                        case sf::Keyboard::Enter:
+                            {
+                                pauseGame = false;
+                                break;
+                            }
                             //sidePlayer = Side::LEFT;
                             // updateBranches(sideBranch, NUM_BRANCHES);
                             //sidePlayer = Side::RIGHT;
@@ -220,90 +226,93 @@ int main()
             }
         }
        
-        // 업데이트
-        if (isRightDown || isLeftDown)
+        if (!pauseGame)
         {
-            if (isLeft)
+            // 업데이트
+            if (isRightDown || isLeftDown)
             {
-                sidePlayer = Side::LEFT;
+                if (isLeft)
+                {
+                    sidePlayer = Side::LEFT;
 
-                spriteAxe.setScale(-1, 1);
-            }
-            if (isRightDown)
-            {
-                sidePlayer = Side::RIGHT;
-                spriteAxe.setScale(1, 1);
-            }
+                    spriteAxe.setScale(-1, 1);
+                }
+                if (isRightDown)
+                {
+                    sidePlayer = Side::RIGHT;
+                    spriteAxe.setScale(1, 1);
+                }
 
-            updateBranches(sideBranch, NUM_BRANCHES);
-            
-            if (sidePlayer == sideBranch[NUM_BRANCHES - 1])
-            {
-                printf("맞음\n");
-            }
-        }
+                updateBranches(sideBranch, NUM_BRANCHES);
 
-        if (isLeft && !isLeftUp || isRight && !isRightUp)
-        {
-      
-            drawAxe = true;
-        }
-        else
-        {
-            drawAxe = false;
-        }
-
-        // 구름 이동
-        for (int i = 0; i < 3; i++)
-        {
-            // 화변 밖으로 나갈 경우 재 생성
-            if (IsOutOfScreen(spriteCloud[i], textureCloud))
-            {
-                SpawnSprite(spriteCloud[i], textureCloud, cloudDir[i], textureCloud.getSize().y * i);
+                if (sidePlayer == sideBranch[NUM_BRANCHES - 1])
+                {
+                    printf("맞음\n");
+                    pauseGame = true;
+                }
             }
 
-            // 이동
-            MoveSprite(spriteCloud[i], cloudDir[i], cloudSpeed[i]);
-        }
-
-        // 벌 이동 (랜덤 이동)
-        sf::Vector2f beePos0 = spriteBee[0].getPosition();
-
-        curTime += deltaTime;
-
-        if (curTime >= nextActionTime)
-        {
-            randomX = rand() % 3 - 1;
-            randomY = rand() % 3 - 1;
-
-            nextActionTime = curTime + 1.5f;
-        }
-
-        sf::Vector2f beeDir0 = { (float)randomX , (float)randomY };
-        MoveSprite(spriteBee[0], beeDir0, beeSpeed[0]);
-
-
-        // 벌 이동 (포물선 운동)
-        sf::Vector2f beePos1 = spriteBee[1].getPosition();
-        float rd = beePos1.x * 3.14f / 180;
-        beePos1 += beeDir[1] * beeSpeed[1] * deltaTime;
-        beePos1.y = (sin(rd) * 50) + 800;
-        spriteBee[1].setPosition(beePos1);
-
-
-        // 벌 화면 밖으로 나갈 경우 재 생성
-        for (int i = 0; i < 2; i++)
-        {
-            if (IsOutOfScreen(spriteBee[i], textureBee))
+            if (isLeft && !isLeftUp || isRight && !isRightUp)
             {
-                SpawnSprite(spriteBee[i], textureBee, beeDir[i], 600);
+
+                drawAxe = true;
             }
-        }
-
-        for (int i = 0; i < NUM_BRANCHES; i++)
-        {
-            switch (sideBranch[i])
+            else
             {
+                drawAxe = false;
+            }
+
+            // 구름 이동
+            for (int i = 0; i < 3; i++)
+            {
+                // 화변 밖으로 나갈 경우 재 생성
+                if (IsOutOfScreen(spriteCloud[i], textureCloud))
+                {
+                    SpawnSprite(spriteCloud[i], textureCloud, cloudDir[i], textureCloud.getSize().y * i);
+                }
+
+                // 이동
+                MoveSprite(spriteCloud[i], cloudDir[i], cloudSpeed[i]);
+            }
+
+            // 벌 이동 (랜덤 이동)
+            sf::Vector2f beePos0 = spriteBee[0].getPosition();
+
+            curTime += deltaTime;
+
+            if (curTime >= nextActionTime)
+            {
+                randomX = rand() % 3 - 1;
+                randomY = rand() % 3 - 1;
+
+                nextActionTime = curTime + 1.5f;
+            }
+
+            sf::Vector2f beeDir0 = { (float)randomX , (float)randomY };
+            MoveSprite(spriteBee[0], beeDir0, beeSpeed[0]);
+
+
+            // 벌 이동 (포물선 운동)
+            sf::Vector2f beePos1 = spriteBee[1].getPosition();
+            float rd = beePos1.x * 3.14f / 180;
+            beePos1 += beeDir[1] * beeSpeed[1] * deltaTime;
+            beePos1.y = (sin(rd) * 50) + 800;
+            spriteBee[1].setPosition(beePos1);
+
+
+            // 벌 화면 밖으로 나갈 경우 재 생성
+            for (int i = 0; i < 2; i++)
+            {
+                if (IsOutOfScreen(spriteBee[i], textureBee))
+                {
+                    SpawnSprite(spriteBee[i], textureBee, beeDir[i], 600);
+                }
+            }
+
+            for (int i = 0; i < NUM_BRANCHES; i++)
+            {
+                switch (sideBranch[i])
+                {
                 case Side::LEFT:
                     spriteBranch[i].setScale(-1.f, 1.f);
                     break;
@@ -311,13 +320,13 @@ int main()
                 case Side::RIGHT:
                     spriteBranch[i].setScale(1.f, 1.f);
                     break;
+                }
             }
-        }
 
-        
 
-        switch (sidePlayer)
-        {
+
+            switch (sidePlayer)
+            {
             case Side::LEFT:
                 spritePlayer.setScale(-1, 1);
                 break;
@@ -325,44 +334,46 @@ int main()
             case Side::RIGHT:
                 spritePlayer.setScale(1, 1);
                 break;
-        }
-
-        // 화면에 출력
-        window.clear();
-
-        window.draw(spriteBackground); // 배경
-
-        for (int i = 0; i < 3; i++) // 구름
-        {
-            window.draw(spriteCloud[i]);
-        }
-
-        window.draw(spriteTree); // 나무 기둥
-
-        for (int i = 0; i < NUM_BRANCHES; i++) // 나뭇가지
-        {
-            if (sideBranch[i] != Side::NONE)
-            {
-                window.draw(spriteBranch[i]);
             }
-        }
 
-        for (int i = 0; i < 2; i++) // 벌
-        {
-            window.draw(spriteBee[i]);
-        }
+            // 화면에 출력
+            window.clear();
 
-        window.draw(spritePlayer); // 플레이어
+            window.draw(spriteBackground); // 배경
+
+            for (int i = 0; i < 3; i++) // 구름
+            {
+                window.draw(spriteCloud[i]);
+            }
+
+            window.draw(spriteTree); // 나무 기둥
+
+            for (int i = 0; i < NUM_BRANCHES; i++) // 나뭇가지
+            {
+                if (sideBranch[i] != Side::NONE)
+                {
+                    window.draw(spriteBranch[i]);
+                }
+            }
+
+            for (int i = 0; i < 2; i++) // 벌
+            {
+                window.draw(spriteBee[i]);
+            }
+
+            window.draw(spritePlayer); // 플레이어
+
+            if (drawAxe)
+            {
+                window.draw(spriteAxe);
+            }
+
+            window.display();
+
+
+        }
+        }
         
-        if (drawAxe)
-        {
-            window.draw(spriteAxe);
-        }
-
-        window.display();
-
-        
-    }
 
     return 0;
 }
