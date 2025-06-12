@@ -1,13 +1,36 @@
 #include <SFML/Graphics.hpp>
 #include <ctime>
 #include <cstdlib>
-#include <math.h>
 
 void MoveSprite(sf::Sprite& target, sf::Vector2f dir, float speed);
 bool IsOutOfScreen(sf::Sprite& sprite, sf::Texture texture);
 void SpawnSprite(sf::Sprite& sprite, sf::Texture texture, sf::Vector2f& dir, float posY);
 
+
+
 enum class Side { LEFT, RIGHT, NONE };
+
+void updateBranches(Side* branches, int size)
+{
+    for (int i = size - 1; i >= 0; i--)
+    {
+        branches[i] = branches[i - 1];
+    }
+
+    int r = rand() % 3;
+    switch (r)
+    {
+        case 0:
+            branches[0] = Side::LEFT;
+            break;
+        case 1:
+            branches[0] = Side::RIGHT;
+            break;
+        case 2:
+            branches[0] = Side::NONE;
+            break;
+    }
+}
 
 float deltaTime;
 float curTime = 0;
@@ -60,12 +83,12 @@ int main()
 
     sf::Sprite spritePlayer;    // 플레이어
     spritePlayer.setTexture(texturePlayer);
-    spritePlayer.setOrigin(texturePlayer.getSize().x * 0.5f + textureTree.getSize().x * -0.5f - 100, texturePlayer.getSize().y);
+    spritePlayer.setOrigin(texturePlayer.getSize().x * 0.5f + textureTree.getSize().x * -0.5f - 200, texturePlayer.getSize().y);
     spritePlayer.setPosition(1920 * 0.5, 950);
     Side sidePlayer = Side::LEFT;
     
     
-                                // 나무
+                                // 나뭇가지
     const int NUM_BRANCHES = 6; // const 키워드 읽기만 가능, 쓰기 불가능 → 즉 수정 불가 (상수)    
     sf::Sprite spriteBranch[NUM_BRANCHES];
     Side sideBranch[NUM_BRANCHES] = { Side::LEFT, Side::RIGHT, Side::NONE, Side::LEFT, Side::RIGHT, Side::NONE };
@@ -74,6 +97,20 @@ int main()
         spriteBranch[i].setTexture(textureBranch);
         spriteBranch[i].setOrigin(textureTree.getSize().x * -0.5f, 0);
         spriteBranch[i].setPosition(1920 * 0.5f, i * 150.f);
+
+        int r = rand() % 3;
+        switch (r)
+        {
+        case 0:
+            sideBranch[i] = Side::LEFT;
+            break;
+        case 1:
+            sideBranch[i] = Side::RIGHT;
+            break;
+        case 2:
+            sideBranch[i] = Side::NONE;
+            break;
+        }
     }
 
     // 나무 생성
@@ -116,8 +153,27 @@ int main()
         sf::Event event;
         while (window.pollEvent(event))
         {
-            if (event.type == sf::Event::Closed)
-                window.close();
+            switch (event.type)
+            {
+                case sf::Event::Closed:
+                    window.close();
+                    break;
+
+                case sf::Event::KeyPressed:
+                    switch (event.key.code)
+                    {
+                        case sf::Keyboard::Left:
+                            sidePlayer = Side::LEFT;
+                            updateBranches(sideBranch,  NUM_BRANCHES);
+                            break;
+
+                        case sf::Keyboard::Right:
+                            sidePlayer = Side::RIGHT;
+                            updateBranches(sideBranch, NUM_BRANCHES);
+                            break;
+                    }
+                    break;
+            }
         }
        
         // 구름 이동
@@ -127,8 +183,6 @@ int main()
             if (IsOutOfScreen(spriteCloud[i], textureCloud))
             {
                 SpawnSprite(spriteCloud[i], textureCloud, cloudDir[i], textureCloud.getSize().y * i);
-
-
             }
 
             // 이동
@@ -183,14 +237,7 @@ int main()
             }
         }
 
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
-        {
-            sidePlayer = Side::LEFT;
-        }
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
-        {
-            sidePlayer = Side::RIGHT;
-        }
+        
 
         switch (sidePlayer)
         {
