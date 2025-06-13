@@ -44,69 +44,76 @@ int main()
     srand((int)time(0));
 
 
-    // 텍스쳐 설정
+    // 배경
     sf::Texture textureBackground;
     textureBackground.loadFromFile("graphics/background.png");
-
-    sf::Texture textureCloud;
-    textureCloud.loadFromFile("graphics/cloud.png");
-
-    sf::Texture textureTree;
-    textureTree.loadFromFile("graphics/tree.png");
-
-    sf::Texture textureBee;
-    textureBee.loadFromFile("graphics/bee.png");
-
-    sf::Texture texturePlayer;
-    texturePlayer.loadFromFile("graphics/player.png");
-
-    sf::Texture textureBranch;
-    textureBranch.loadFromFile("graphics/branch.png");
-
-    sf::Texture textureAxe;
-    textureAxe.loadFromFile("graphics/axe.png");
-
-
-    // 스프라이트
-    sf::Sprite spriteBackground; // 배경        
+    sf::Sprite spriteBackground;
     spriteBackground.setTexture(textureBackground);
 
-    sf::Sprite spriteCloud[3];  // 구름
+    // 구름
+    sf::Texture textureCloud;
+    textureCloud.loadFromFile("graphics/cloud.png");
+    sf::Sprite spriteCloud[3];
+    sf::Vector2f cloudDir[3];
+    float cloudSpeed[3];
     for (int i = 0; i < 3; i++)
+    {
         spriteCloud[i].setTexture(textureCloud);
 
-    sf::Sprite spriteTree;      // 나무
+        // 속도
+        int random = rand() % 9;
+        cloudSpeed[i] = random * 30.0f + 50.0;
+
+        // 생성
+        SpawnSprite(spriteCloud[i], textureCloud, cloudDir[i], textureCloud.getSize().y * i);
+    }
+        
+
+    // 나무
+    sf::Texture textureTree;
+    textureTree.loadFromFile("graphics/tree.png");
+    sf::Sprite spriteTree;
     spriteTree.setTexture(textureTree);
 
-    sf::Sprite spriteBee[2];    // 벌
-    for (int i = 0; i < 2; i++)
-        spriteBee[i].setTexture(textureBee);
+    spriteTree.setOrigin(textureTree.getSize().x * 0.5f, 0.0f);
+    spriteTree.setPosition(1920 * 0.5f, 0.0f);
 
-    sf::Sprite spritePlayer;    // 플레이어
+    // 벌
+    sf::Texture textureBee;
+    textureBee.loadFromFile("graphics/bee.png");
+    sf::Sprite spriteBee[2];
+    for (int i = 0; i < 2; i++)
+    {
+        spriteBee[i].setTexture(textureBee);
+    }
+        
+
+    // 플레이어
+    sf::Texture texturePlayer;
+    texturePlayer.loadFromFile("graphics/player.png");
+    sf::Sprite spritePlayer;    
     spritePlayer.setTexture(texturePlayer);
-    spritePlayer.setOrigin(texturePlayer.getSize().x + textureTree.getSize().x * -0.5f - 200, texturePlayer.getSize().y);
+
+    spritePlayer.setOrigin(texturePlayer.getSize().x + textureTree.getSize().x * -0.5f - 200, texturePlayer.getSize().y); 
     spritePlayer.setPosition(1920 * 0.5, 950);
     Side sidePlayer = Side::LEFT;
-
-    sf::Sprite spriteAxe; // 도끼
-       
-    spriteAxe.setTexture(textureAxe);
-    spriteAxe.setOrigin(texturePlayer.getSize().x * 0.5f + textureTree.getSize().x * -0.5f, texturePlayer.getSize().y * 0.4f);
-    spriteAxe.setPosition(spritePlayer.getPosition().x, spritePlayer.getPosition().y);
     
-    
-                                // 나뭇가지
-    const int NUM_BRANCHES = 6; // const 키워드 읽기만 가능, 쓰기 불가능 → 즉 수정 불가 (상수)    
+    // 나뭇가지
+    const int NUM_BRANCHES = 6; // const 키워드 읽기만 가능, 쓰기 불가능 → 즉 수정 불가 (상수)
+    sf::Texture textureBranch;
+    textureBranch.loadFromFile("graphics/branch.png");    
     sf::Sprite spriteBranch[NUM_BRANCHES];
-    Side sideBranch[NUM_BRANCHES] = { Side::LEFT, Side::RIGHT, Side::NONE, Side::LEFT, Side::RIGHT, Side::NONE };
+
+    Side sideBranch[NUM_BRANCHES];
+
     for (int i = 0; i < NUM_BRANCHES; i++)
     {
         spriteBranch[i].setTexture(textureBranch);
         spriteBranch[i].setOrigin(textureTree.getSize().x * -0.5f, 0);
         spriteBranch[i].setPosition(1920 * 0.5f, i * 150.f);
 
-        int r = rand() % 3;
-        switch (r)
+        int random = rand() % 3;
+        switch (random)
         {
         case 0:
             sideBranch[i] = Side::LEFT;
@@ -120,23 +127,15 @@ int main()
         }
     }
 
-    // 나무 생성
-    spriteTree.setOrigin(textureTree.getSize().x * 0.5f, 0.0f);
-    spriteTree.setPosition(1920 * 0.5f, 0.0f);
+    // 도끼
+    sf::Texture textureAxe;
+    textureAxe.loadFromFile("graphics/axe.png");
+    sf::Sprite spriteAxe; 
+    spriteAxe.setTexture(textureAxe);
 
-    // 구름 생성
-    float cloudSpeed[3];    
-    sf::Vector2f cloudDir[3];
-    for (int i = 0; i < 3; i++)
-    {
-        // 속도
-        int random = rand() % 9;
-        cloudSpeed[i] = random * 30.0f + 50.0;
-
-        // 생성
-        SpawnSprite(spriteCloud[i], textureCloud, cloudDir[i], textureCloud.getSize().y * i );
-    }
-
+    spriteAxe.setOrigin(texturePlayer.getSize().x * 0.5f + textureTree.getSize().x * -0.5f, texturePlayer.getSize().y * 0.4f);
+    spriteAxe.setPosition(spritePlayer.getPosition().x, spritePlayer.getPosition().y);
+    
     // 벌 생성
     sf::Vector2f beeDir[2];
     float beeSpeed[2] = { 200, 200 };
@@ -201,10 +200,6 @@ int main()
                                 pauseGame = false;
                                 break;
                             }
-                            //sidePlayer = Side::LEFT;
-                            // updateBranches(sideBranch, NUM_BRANCHES);
-                            //sidePlayer = Side::RIGHT;
-                            //updateBranches(sideBranch, NUM_BRANCHES);
                     }
                     break;
                 
@@ -307,6 +302,7 @@ int main()
                 }
             }
 
+            // 나뭇가지 방향 변경
             for (int i = 0; i < NUM_BRANCHES; i++)
             {
                 switch (sideBranch[i])
@@ -321,8 +317,7 @@ int main()
                 }
             }
 
-
-
+            // 플레이어의 위치 및 방향 설정
             switch (sidePlayer)
             {
             case Side::LEFT:
@@ -367,12 +362,8 @@ int main()
             }
 
             window.display();
-
-
         }
-        }
-        
-
+    }
     return 0;
 }
 
