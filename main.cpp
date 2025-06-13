@@ -68,7 +68,6 @@ int main()
         SpawnSprite(spriteCloud[i], textureCloud, cloudDir[i], textureCloud.getSize().y * i);
     }
         
-
     // 나무
     sf::Texture textureTree;
     textureTree.loadFromFile("graphics/tree.png");
@@ -87,7 +86,6 @@ int main()
         spriteBee[i].setTexture(textureBee);
     }
         
-
     // 플레이어
     sf::Texture texturePlayer;
     texturePlayer.loadFromFile("graphics/player.png");
@@ -148,12 +146,54 @@ int main()
     spriteBee[0].setPosition(500, 500);
     SpawnSprite(spriteBee[1], textureBee, beeDir[1], 500);
         
+    // 폰트
+    sf::Font font;
+    font.loadFromFile("fonts/KOMIKAP_.ttf");
+
+    // UI
+    sf::Text textMessage;
+    textMessage.setFont(font);
+    textMessage.setString("Press Enter to Start!");
+    textMessage.setCharacterSize(100);
+    textMessage.setFillColor(sf::Color::White);
+
+    sf::Vector2f messageOrigin;
+    messageOrigin.x = textMessage.getLocalBounds().width * 0.5f;
+    messageOrigin.y = textMessage.getLocalBounds().height * 0.5f;
+    textMessage.setOrigin(messageOrigin);
+    textMessage.setPosition(1920 * 0.5f, 1080 * 0.5f);
+
+    sf::Text textScore;
+    textScore.setFont(font);
+    textScore.setString("SCORE: 0");
+    textScore.setCharacterSize(100); // 세로 기준 폰트 크기
+    textScore.setFillColor(sf::Color::White);
+    textScore.setPosition(20, 20);
+
+    sf::RectangleShape timeBar;
+    float timeBarWidth = 400;
+    float timeBarHeight = 80;
+    timeBar.setSize({ timeBarWidth, timeBarHeight });
+    timeBar.setFillColor(sf::Color::Red);
+    timeBar.setPosition(1920.f * 0.5f - timeBarWidth * 0.5f, 1080.f - 100.f);
+
+
+    // 게임 데이터
+    int score = 0;
+    float remaingTime = 5.0f;
+    float timeBarSpeed = timeBarWidth / 5.0f;
+
+    bool isGameOver = false;
+    bool isPlaying = false;
+    bool startGame = false;
+    bool isPlayerDead = false;
+
     sf::Clock clock;
 
     bool isLeft = false;
     bool isRight = false;
    
-    bool pauseGame = false;
+    
     bool drawAxe = false;
 
     while (window.isOpen())
@@ -165,7 +205,6 @@ int main()
         bool isLeftUp = false;
         bool isRightDown = false;
         bool isRightUp = false;
-
 
         // 이벤트 루프
         sf::Event event;
@@ -195,11 +234,28 @@ int main()
                             }
                             isRight = true;
                             break;
+
                         case sf::Keyboard::Enter:
+                            isPlaying = !isPlaying;
+                            if (!isPlaying)
                             {
-                                pauseGame = false;
-                                break;
+                                textMessage.setString("Press Enter to Restart!");
+                                sf::Vector2f messageOrigin;
+                                messageOrigin.x = textMessage.getLocalBounds().width * 0.5f;
+                                messageOrigin.y = textMessage.getLocalBounds().height * 0.5f;
+                                textMessage.setOrigin(messageOrigin);
                             }
+                            else
+                            {
+                                if (remaingTime == 0.0f || sidePlayer == sideBranch[NUM_BRANCHES - 1])
+                                {
+                                    score = 0;
+                                    textScore.setString("SCORE: " + std::to_string(score));
+                                    remaingTime = 5.0f;
+                                    sideBranch[NUM_BRANCHES - 1] = Side::NONE;
+                                }
+                            }
+                            break;
                     }
                     break;
                 
@@ -220,9 +276,22 @@ int main()
                 }
             }
         }
-       
-        if (!pauseGame)
+        
+
+        if (isPlaying)
         {
+            remaingTime -= deltaTime;
+
+            if (remaingTime < 0.0f)
+            {
+                remaingTime = 0.0f;
+                isPlaying = false;
+                isGameOver = true;
+                textMessage.setString("Press Enter to Restart!");
+            }
+
+            timeBar.setSize({ timeBarSpeed * remaingTime, timeBarHeight});
+
             // 업데이트
             if (isRightDown || isLeftDown)
             {
@@ -242,7 +311,12 @@ int main()
                 if (sidePlayer == sideBranch[NUM_BRANCHES - 1])
                 {
                     printf("맞음\n");
-                    pauseGame = true;
+                    isPlaying = false;
+                }
+                else
+                {
+                    score += 10;
+                    textScore.setString("SCORE: " + std::to_string(score));
                 }
             }
 
@@ -328,41 +402,51 @@ int main()
                 spritePlayer.setScale(1, 1);
                 break;
             }
-
-            // 화면에 출력
-            window.clear();
-
-            window.draw(spriteBackground); // 배경
-
-            for (int i = 0; i < 3; i++) // 구름
-            {
-                window.draw(spriteCloud[i]);
-            }
-
-            window.draw(spriteTree); // 나무 기둥
-
-            for (int i = 0; i < NUM_BRANCHES; i++) // 나뭇가지
-            {
-                if (sideBranch[i] != Side::NONE)
-                {
-                    window.draw(spriteBranch[i]);
-                }
-            }
-
-            for (int i = 0; i < 2; i++) // 벌
-            {
-                window.draw(spriteBee[i]);
-            }
-
-            window.draw(spritePlayer); // 플레이어
-
-            if (drawAxe)
-            {
-                window.draw(spriteAxe);
-            }
-
-            window.display();
         }
+
+        window.clear();
+
+        // World
+        window.draw(spriteBackground); // 배경
+
+        for (int i = 0; i < 3; i++) // 구름
+        {
+            window.draw(spriteCloud[i]);
+        }
+
+        window.draw(spriteTree); // 나무 기둥
+
+        for (int i = 0; i < NUM_BRANCHES; i++) // 나뭇가지
+        {
+            if (sideBranch[i] != Side::NONE)
+            {
+                window.draw(spriteBranch[i]);
+            }
+        }
+
+        for (int i = 0; i < 2; i++) // 벌
+        {
+            window.draw(spriteBee[i]);
+        }
+
+        window.draw(spritePlayer); // 플레이어
+
+        if (drawAxe)
+        {
+            window.draw(spriteAxe);
+        }
+
+        // UI
+        window.draw(textScore);
+        window.draw(timeBar);
+
+        if (!isPlaying)
+        {
+            window.draw(textMessage);
+        }
+
+        window.display();
+
     }
     return 0;
 }
