@@ -221,7 +221,6 @@ int main()
         spriteLog[i].setOrigin(textureLog.getSize().x * 0.5f, textureLog.getSize().y);
         spriteLog[i].setPosition(logInitposition);
         isActiveLog[i] = false;
-
     }
 
 
@@ -346,9 +345,6 @@ int main()
                 isActiveLog[logIndex] = true;
                 spriteLog[logIndex].setPosition(logInitposition);
                
-
-       
-
                 if (isLeft)
                 {
                     sidePlayer = Side::LEFT;
@@ -485,7 +481,7 @@ int main()
                     spriteLog[i].setPosition(position);
                 }
 
-                if (spriteLog[i].getPosition().x > 1920 + 100)
+                if (spriteLog[i].getPosition().x > 1920 + 100 || spriteLog[i].getPosition().x < -100)
                 {
                     spriteLog[i].setPosition(logInitposition);
                     isActiveLog[i] = false;
@@ -493,7 +489,7 @@ int main()
             }
             
         }
-
+        // 그리기
         window.clear();
 
         // World
@@ -514,7 +510,6 @@ int main()
             }
         }
         
-
         for (int i = 0; i < NUM_BRANCHES; i++) // 나뭇가지
         {
             if (sideBranch[i] != Side::NONE)
