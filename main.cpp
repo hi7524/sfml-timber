@@ -193,22 +193,37 @@ int main()
     sf::Sound soundOutOfTime;
     soundOutOfTime.setBuffer(bufferOutOfTime);
 
-    //
+    // 나무 토막
     sf::Texture textureLog;
     textureLog.loadFromFile("graphics/log.png");
-    sf::Sprite testLog;
-    testLog.setTexture(textureLog);
-    testLog.setOrigin(textureLog.getSize().x * 0.5f, textureLog.getSize().y);
-    sf::Vector2f logInitposition = spriteTree.getPosition();
-    logInitposition.y = textureTree.getSize().y;
-    testLog.setPosition(logInitposition);
 
-    bool isActiveTestLog = false;
-    sf::Vector2f testLogDirection = { 1.0f, -1.0f };
-    float testLogSpeed = 2000.0f;
+    const int logCount = 10;
+    int logIndex = 0;
+    bool isActiveLog[logCount];
+
+    sf::Sprite spriteLog[logCount];
+    
+    sf::Vector2f logInitposition; // 초기 위치
+    logInitposition = spriteTree.getPosition();
+    logInitposition.y = textureTree.getSize().y;
+    
+    sf::Vector2f logDirR = { 1.0f, -1.0f };
+    sf::Vector2f logDirL = { -1.0f, -1.0f };
+    float logSpeed = 2000.0f;
+    float logSpeed1 = -2000.0f;
 
     sf::Vector2f gravity = { 0.0f, 5000.0f };
-    sf::Vector2f testLogVelocity = testLogDirection * testLogSpeed;
+    sf::Vector2f logVelocity[logCount];
+
+    for (int i = 0; i < logCount; i++)
+    {
+        spriteLog[i].setTexture(textureLog);
+        spriteLog[i].setOrigin(textureLog.getSize().x * 0.5f, textureLog.getSize().y);
+        spriteLog[i].setPosition(logInitposition);
+        isActiveLog[i] = false;
+
+    }
+
 
     // 게임 데이터
     int score = 0;
@@ -328,19 +343,34 @@ int main()
             // 업데이트
             if (isRightDown || isLeftDown)
             {
-                isActiveTestLog = true;
-                testLog.setPosition(logInitposition);
-                testLogVelocity = testLogDirection * testLogSpeed;
+                isActiveLog[logIndex] = true;
+                spriteLog[logIndex].setPosition(logInitposition);
+               
+
+       
 
                 if (isLeft)
                 {
                     sidePlayer = Side::LEFT;
                     spriteAxe.setScale(-1, 1);
+
+                    logVelocity[logIndex] = logDirR * logSpeed;
                 }
                 if (isRightDown)
                 {
                     sidePlayer = Side::RIGHT;
                     spriteAxe.setScale(1, 1);
+
+                    logVelocity[logIndex] = logDirL * logSpeed;
+                }
+
+                if (logIndex < logCount - 1)
+                {
+                    logIndex++;
+                }
+                else
+                {
+                    logIndex = 0;
                 }
 
                 updateBranches(sideBranch, NUM_BRANCHES);
@@ -367,6 +397,8 @@ int main()
             {
                 drawAxe = false;
             }
+
+           
 
             // 구름 이동
             for (int i = 0; i < 3; i++)
@@ -442,14 +474,24 @@ int main()
                 break;
             }
 
-            if (isActiveTestLog)
+            for (int i = 0; i < logCount; i++)
             {
-                testLogVelocity += gravity * deltaTime;
+                if (isActiveLog[i])
+                {
+                    logVelocity[i] += gravity * deltaTime;
 
-                sf::Vector2f position = testLog.getPosition();
-                position += testLogVelocity * deltaTime;
-                testLog.setPosition(position);
+                    sf::Vector2f position = spriteLog[i].getPosition();
+                    position += logVelocity[i] * deltaTime;
+                    spriteLog[i].setPosition(position);
+                }
+
+                if (spriteLog[i].getPosition().x > 1920 + 100)
+                {
+                    spriteLog[i].setPosition(logInitposition);
+                    isActiveLog[i] = false;
+                }
             }
+            
         }
 
         window.clear();
@@ -464,7 +506,14 @@ int main()
 
         window.draw(spriteTree); // 나무 기둥
 
-        window.draw(testLog);
+        for (int i = 0; i < logCount; i++)
+        {
+            if (isActiveLog[i] == true)
+            {
+                window.draw(spriteLog[i]);
+            }
+        }
+        
 
         for (int i = 0; i < NUM_BRANCHES; i++) // 나뭇가지
         {
