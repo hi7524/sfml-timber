@@ -1,4 +1,5 @@
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include <ctime>
 #include <cstdlib>
 
@@ -177,6 +178,37 @@ int main()
     timeBar.setFillColor(sf::Color::Red);
     timeBar.setPosition(1920.f * 0.5f - timeBarWidth * 0.5f, 1080.f - 100.f);
 
+    // Sounds
+    sf::SoundBuffer bufferChop;
+    bufferChop.loadFromFile("sound/chop.wav");
+    sf::SoundBuffer bufferDeath;
+    bufferDeath.loadFromFile("sound/death.wav");
+    sf::SoundBuffer bufferOutOfTime;
+    bufferOutOfTime.loadFromFile("sound/out_of_time.wav");
+
+    sf::Sound soundChop;
+    soundChop.setBuffer(bufferChop);
+    sf::Sound soundDeath;
+    soundDeath.setBuffer(bufferDeath);
+    sf::Sound soundOutOfTime;
+    soundOutOfTime.setBuffer(bufferOutOfTime);
+
+    //
+    sf::Texture textureLog;
+    textureLog.loadFromFile("graphics/log.png");
+    sf::Sprite testLog;
+    testLog.setTexture(textureLog);
+    testLog.setOrigin(textureLog.getSize().x * 0.5f, textureLog.getSize().y);
+    sf::Vector2f logInitposition = spriteTree.getPosition();
+    logInitposition.y = textureTree.getSize().y;
+    testLog.setPosition(logInitposition);
+
+    bool isActiveTestLog = false;
+    sf::Vector2f testLogDirection = { 1.0f, -1.0f };
+    float testLogSpeed = 2000.0f;
+
+    sf::Vector2f gravity = { 0.0f, 5000.0f };
+    sf::Vector2f testLogVelocity = testLogDirection * testLogSpeed;
 
     // 게임 데이터
     int score = 0;
@@ -287,6 +319,7 @@ int main()
                 remaingTime = 0.0f;
                 isPlaying = false;
                 isGameOver = true;
+                soundOutOfTime.play();
                 textMessage.setString("Press Enter to Restart!");
             }
 
@@ -295,6 +328,10 @@ int main()
             // 업데이트
             if (isRightDown || isLeftDown)
             {
+                isActiveTestLog = true;
+                testLog.setPosition(logInitposition);
+                testLogVelocity = testLogDirection * testLogSpeed;
+
                 if (isLeft)
                 {
                     sidePlayer = Side::LEFT;
@@ -311,15 +348,17 @@ int main()
                 if (sidePlayer == sideBranch[NUM_BRANCHES - 1])
                 {
                     printf("맞음\n");
+                    soundDeath.play();
                     isPlaying = false;
                 }
                 else
                 {
+                    soundChop.play();
                     score += 10;
                     textScore.setString("SCORE: " + std::to_string(score));
                 }
             }
-
+            
             if (isLeft  || isRight)
             {
                 drawAxe = true;
@@ -402,6 +441,15 @@ int main()
                 spritePlayer.setScale(1, 1);
                 break;
             }
+
+            if (isActiveTestLog)
+            {
+                testLogVelocity += gravity * deltaTime;
+
+                sf::Vector2f position = testLog.getPosition();
+                position += testLogVelocity * deltaTime;
+                testLog.setPosition(position);
+            }
         }
 
         window.clear();
@@ -415,6 +463,8 @@ int main()
         }
 
         window.draw(spriteTree); // 나무 기둥
+
+        window.draw(testLog);
 
         for (int i = 0; i < NUM_BRANCHES; i++) // 나뭇가지
         {
