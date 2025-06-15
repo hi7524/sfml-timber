@@ -3,182 +3,58 @@
 #include <ctime>
 #include <cstdlib>
 
-void MoveSprite(sf::Sprite& target, sf::Vector2f dir, float speed);
-bool IsOutOfScreen(sf::Sprite& sprite, sf::Texture texture);
-void SpawnSprite(sf::Sprite& sprite, sf::Texture texture, sf::Vector2f& dir, float posY);
 
-enum class Side { LEFT, RIGHT, NONE };
-
-void updateBranches(Side* branches, int size)
-{
-    for (int i = size - 1; i >= 0; i--)
-    {
-        branches[i] = branches[i - 1];
-    }
-
-    int r = rand() % 3;
-    switch (r)
-    {
-        case 0:
-            branches[0] = Side::LEFT;
-            break;
-        case 1:
-            branches[0] = Side::RIGHT;
-            break;
-        case 2:
-            branches[0] = Side::NONE;
-            break;
-    }
-}
+int windowSizeW = 1920;
+int windowSizeH = 1080;
 
 float deltaTime;
 float curTime = 0;
-int randomX = 0;
-int randomY = 0;
-float nextActionTime = 0;
+
+enum class Side
+{
+    LEFT,
+    RIGHT,
+    NONE
+};
+
+
+void Movement(sf::Sprite& sprite, sf::Vector2f dir, float speed);
+bool IsOutOfScreen(sf::Sprite& sprite, sf::Texture spriteTexture);
+int RandomInt(int num1, int num2);
+bool RandomBool();
+void UpdateBranches(Side* branchSide, int size);
+void SetTextOrigin(sf::Text& text);
+
 
 int main()
 {
-    // 창 설정
-    sf::RenderWindow window(sf::VideoMode(1920, 1080), "Timber!");
+    // 창 생성
+    sf::RenderWindow window(sf::VideoMode(windowSizeW, windowSizeH), "TimberRemake");
 
-    srand((int)time(0));
+    srand((int)time(0)); // 난수 생성
 
-
-    // 배경
-    sf::Texture textureBackground;
-    textureBackground.loadFromFile("graphics/background.png");
-    sf::Sprite spriteBackground;
-    spriteBackground.setTexture(textureBackground);
-
-    // 구름
-    sf::Texture textureCloud;
-    textureCloud.loadFromFile("graphics/cloud.png");
-    sf::Sprite spriteCloud[3];
-    sf::Vector2f cloudDir[3];
-    float cloudSpeed[3];
-    for (int i = 0; i < 3; i++)
-    {
-        spriteCloud[i].setTexture(textureCloud);
-
-        // 속도
-        int random = rand() % 9;
-        cloudSpeed[i] = random * 30.0f + 50.0;
-
-        // 생성
-        SpawnSprite(spriteCloud[i], textureCloud, cloudDir[i], textureCloud.getSize().y * i);
-    }
-        
-    // 나무
-    sf::Texture textureTree;
-    textureTree.loadFromFile("graphics/tree.png");
-    sf::Sprite spriteTree;
-    spriteTree.setTexture(textureTree);
-
-    spriteTree.setOrigin(textureTree.getSize().x * 0.5f, 0.0f);
-    spriteTree.setPosition(1920 * 0.5f, 0.0f);
-
-    // 벌
-    sf::Texture textureBee;
-    textureBee.loadFromFile("graphics/bee.png");
-    sf::Sprite spriteBee[2];
-    for (int i = 0; i < 2; i++)
-    {
-        spriteBee[i].setTexture(textureBee);
-    }
-        
-    // 플레이어
-    sf::Texture texturePlayer;
-    texturePlayer.loadFromFile("graphics/player.png");
-    sf::Sprite spritePlayer;    
-    spritePlayer.setTexture(texturePlayer);
-
-    spritePlayer.setOrigin(texturePlayer.getSize().x + textureTree.getSize().x * -0.5f - 200, texturePlayer.getSize().y); 
-    spritePlayer.setPosition(1920 * 0.5, 950);
-    Side sidePlayer = Side::LEFT;
+    // Texture
+    sf::Texture backgroundTexture;
+    backgroundTexture.loadFromFile("graphics/background.png");
+    sf::Texture cloudTexture;
+    cloudTexture.loadFromFile("graphics/cloud.png");
+    sf::Texture treeTexture;
+    treeTexture.loadFromFile("graphics/tree.png");
+    sf::Texture branchTexture;
+    branchTexture.loadFromFile("graphics/branch.png");
+    sf::Texture playerTexture;
+    playerTexture.loadFromFile("graphics/player.png");
+    sf::Texture logTexture;
+    logTexture.loadFromFile("graphics/log.png");
+    sf::Texture beeTexture;
+    beeTexture.loadFromFile("graphics/bee.png");
     
-    // 나뭇가지
-    const int NUM_BRANCHES = 6; // const 키워드 읽기만 가능, 쓰기 불가능 → 즉 수정 불가 (상수)
-    sf::Texture textureBranch;
-    textureBranch.loadFromFile("graphics/branch.png");    
-    sf::Sprite spriteBranch[NUM_BRANCHES];
 
-    Side sideBranch[NUM_BRANCHES];
-
-    for (int i = 0; i < NUM_BRANCHES; i++)
-    {
-        spriteBranch[i].setTexture(textureBranch);
-        spriteBranch[i].setOrigin(textureTree.getSize().x * -0.5f, 0);
-        spriteBranch[i].setPosition(1920 * 0.5f, i * 150.f);
-
-        int random = rand() % 3;
-        switch (random)
-        {
-        case 0:
-            sideBranch[i] = Side::LEFT;
-            break;
-        case 1:
-            sideBranch[i] = Side::RIGHT;
-            break;
-        case 2:
-            sideBranch[i] = Side::NONE;
-            break;
-        }
-    }
-
-    // 도끼
-    sf::Texture textureAxe;
-    textureAxe.loadFromFile("graphics/axe.png");
-    sf::Sprite spriteAxe; 
-    spriteAxe.setTexture(textureAxe);
-
-    spriteAxe.setOrigin(texturePlayer.getSize().x * 0.5f + textureTree.getSize().x * -0.5f, texturePlayer.getSize().y * 0.4f);
-    spriteAxe.setPosition(spritePlayer.getPosition().x, spritePlayer.getPosition().y);
-    
-    // 벌 생성
-    sf::Vector2f beeDir[2];
-    float beeSpeed[2] = { 200, 200 };
-    sf::Vector2f beeVec[2];
-    for (int i = 0; i < 2; i++)
-    {
-        spriteBee[i].setOrigin(textureBee.getSize().x * 0.5f, textureBee.getSize().y * 0.5f);
-    }
-
-    spriteBee[0].setPosition(500, 500);
-    SpawnSprite(spriteBee[1], textureBee, beeDir[1], 500);
-        
-    // 폰트
+    // Font
     sf::Font font;
     font.loadFromFile("fonts/KOMIKAP_.ttf");
 
-    // UI
-    sf::Text textMessage;
-    textMessage.setFont(font);
-    textMessage.setString("Press Enter to Start!");
-    textMessage.setCharacterSize(100);
-    textMessage.setFillColor(sf::Color::White);
-
-    sf::Vector2f messageOrigin;
-    messageOrigin.x = textMessage.getLocalBounds().width * 0.5f;
-    messageOrigin.y = textMessage.getLocalBounds().height * 0.5f;
-    textMessage.setOrigin(messageOrigin);
-    textMessage.setPosition(1920 * 0.5f, 1080 * 0.5f);
-
-    sf::Text textScore;
-    textScore.setFont(font);
-    textScore.setString("SCORE: 0");
-    textScore.setCharacterSize(100); // 세로 기준 폰트 크기
-    textScore.setFillColor(sf::Color::White);
-    textScore.setPosition(20, 20);
-
-    sf::RectangleShape timeBar;
-    float timeBarWidth = 400;
-    float timeBarHeight = 80;
-    timeBar.setSize({ timeBarWidth, timeBarHeight });
-    timeBar.setFillColor(sf::Color::Red);
-    timeBar.setPosition(1920.f * 0.5f - timeBarWidth * 0.5f, 1080.f - 100.f);
-
-    // Sounds
+    // SoundBuffer
     sf::SoundBuffer bufferChop;
     bufferChop.loadFromFile("sound/chop.wav");
     sf::SoundBuffer bufferDeath;
@@ -186,6 +62,7 @@ int main()
     sf::SoundBuffer bufferOutOfTime;
     bufferOutOfTime.loadFromFile("sound/out_of_time.wav");
 
+    // Sound
     sf::Sound soundChop;
     soundChop.setBuffer(bufferChop);
     sf::Sound soundDeath;
@@ -193,224 +70,359 @@ int main()
     sf::Sound soundOutOfTime;
     soundOutOfTime.setBuffer(bufferOutOfTime);
 
-    // 나무 토막
-    sf::Texture textureLog;
-    textureLog.loadFromFile("graphics/log.png");
+    // Sprite
+    sf::Sprite backgroundSprite;
+    backgroundSprite.setTexture(backgroundTexture);
 
-    const int logCount = 10;
-    int logIndex = 0;
-    bool isActiveLog[logCount];
+    sf::Sprite cloudSprite[3];
+    for (int i = 0; i < 3; i++)
+        cloudSprite[i].setTexture(cloudTexture);
 
-    sf::Sprite spriteLog[logCount];
-    
-    sf::Vector2f logInitposition; // 초기 위치
-    logInitposition = spriteTree.getPosition();
-    logInitposition.y = textureTree.getSize().y;
-    
-    sf::Vector2f logDirR = { 1.0f, -1.0f };
-    sf::Vector2f logDirL = { -1.0f, -1.0f };
-    float logSpeed = 2000.0f;
-    float logSpeed1 = -2000.0f;
+    sf::Sprite treeSprite;
+    treeSprite.setTexture(treeTexture);
 
-    sf::Vector2f gravity = { 0.0f, 5000.0f };
-    sf::Vector2f logVelocity[logCount];
+    const int branchNum = 6;
+    sf::Sprite branchSprite[branchNum];
+    for (int i = 0; i < branchNum; i++)
+        branchSprite[i].setTexture(branchTexture);
 
-    for (int i = 0; i < logCount; i++)
+    sf::Sprite playerSprite;
+    playerSprite.setTexture(playerTexture);
+
+    sf::Sprite beeSprite[2];
+    for (int i = 0; i < 2; i++)
+        beeSprite[i].setTexture(beeTexture);
+
+    const int logNum = 10;
+    sf::Sprite logSprite[logNum];
+    for (int i = 0; i < logNum; i++)
+        logSprite[i].setTexture(logTexture);
+
+
+    // 구름 초기 설정
+    float cloudSpeed[3];
+    sf::Vector2f cloudDir[3];
+    for (int i = 0; i < 3; i++)
     {
-        spriteLog[i].setTexture(textureLog);
-        spriteLog[i].setOrigin(textureLog.getSize().x * 0.5f, textureLog.getSize().y);
-        spriteLog[i].setPosition(logInitposition);
+        cloudSpeed[i] = RandomInt(1, 5) * 100.0f; // 속도 설정
+
+        if (RandomBool()) // 이동 방향 설정
+        {
+            cloudDir[i] = { -1, 0 };
+            cloudSprite[i].setPosition(windowSizeW + cloudTexture.getSize().x, cloudTexture.getSize().y * i);
+        }
+        else
+        {
+            cloudDir[i] = { 1, 0 };
+            cloudSprite[i].setPosition(-(int)cloudTexture.getSize().x, cloudTexture.getSize().y * i);
+        }
+    }
+
+    // 나무 기둥 초기 설정
+    treeSprite.setOrigin(treeTexture.getSize().x * 0.5f, 0);
+    treeSprite.setPosition(windowSizeW * 0.5f, 0);
+    
+    // 나뭇가지 초기 설정
+    Side branchSide[branchNum];
+    for (int i = 0; i < branchNum; i++)
+    {
+        branchSprite[i].setPosition(0, i * 150);
+        branchSprite[i].setOrigin(treeTexture.getSize().x * -0.5f, 0);
+        branchSprite[i].setPosition(windowSizeW * 0.5f, i * 150);
+
+        int random = RandomInt(0, 3);
+        if (random == 0) 
+        {
+            branchSide[i] = Side::LEFT;
+        }
+        else if (random == 1)
+        {
+            branchSide[i] = Side::RIGHT;
+        }
+        else
+        {
+            branchSide[i] = Side::NONE;
+        }
+
+        branchSide[branchNum - 1] = Side::NONE; // 초기 설정시 마지막 나뭇가지는 비어있도록
+    }
+
+    // 플레이어 초기 설정
+    playerSprite.setOrigin(playerTexture.getSize().x * 0.5f, playerTexture.getSize().y);
+    playerSprite.setPosition(treeSprite.getPosition().x + treeTexture.getSize().x * 0.5f + 150, 950);
+    Side playerSide = Side::RIGHT;
+
+    // 나무 초기 설정
+    sf::Vector2f logInitPosition = treeSprite.getPosition();
+    logInitPosition.y = treeTexture.getSize().y;
+
+    bool isActiveLog[logNum];
+
+    sf::Vector2f logDirR = { 1.f, -1.f };
+    sf::Vector2f logDirL = { -1.f, -1.f };
+    sf::Vector2f logVelocity[logNum];
+
+    float logSpeed = 2000.0f;
+    sf::Vector2f gravity = { 0.f, 6000.f };
+    
+    for (int i = 0; i < logNum; i++)
+    {
+        logSprite[i].setOrigin(logTexture.getSize().x * 0.5f, logTexture.getSize().y);
+        logSprite[i].setPosition(logInitPosition);
         isActiveLog[i] = false;
     }
 
+    // 벌 초기 설정
+    for (int i = 0; i < 2; i++)
+    {
+        beeSprite[i].setOrigin(beeTexture.getSize().x * 0.5, beeTexture.getSize().y);
+    }
+    float beeSpeed = 300;
+    beeSprite[0].setPosition(500, 500);
+
+    
+    // UI
+    sf::Text scoreText; // 점수 텍스트
+    scoreText.setFont(font);
+    scoreText.setString("SCORE: 0");
+    scoreText.setCharacterSize(80);
+    scoreText.setFillColor(sf::Color::White);
+    scoreText.setPosition(20, 20);
+
+    sf::Text infoText; // 게임 정보 텍스트
+    infoText.setFont(font);
+    infoText.setString("- Enter to START -");
+    infoText.setCharacterSize(100);
+    infoText.setFillColor(sf::Color::White);
+    SetTextOrigin(infoText);
+
+    sf::RectangleShape timeBar; // 시간바
+    float timeBarWidth = 400;
+    float timeBarHeight = 80;
+    timeBar.setSize({ timeBarWidth, timeBarHeight });
+    timeBar.setFillColor(sf::Color::Red);
+    timeBar.setPosition(windowSizeW * 0.5f - timeBarWidth * 0.5f, windowSizeH - 100.0f);
+
 
     // 게임 데이터
-    int score = 0;
-    float remaingTime = 5.0f;
-    float timeBarSpeed = timeBarWidth / 5.0f;
-
-    bool isGameOver = false;
-    bool isPlaying = false;
-    bool startGame = false;
-    bool isPlayerDead = false;
-
     sf::Clock clock;
 
+    bool isPlaying = false;
+    bool isPlayerDead = false;
     bool isLeft = false;
     bool isRight = false;
-   
-    
-    bool drawAxe = false;
+    int score = 0;
+    float remaingTime = 5.0f;
+    float timeBarWidthPerSecond = timeBarWidth / 5.0f;
+    float nextActionTime = 0;
+    int logIdx = 0;
+    int randomX = 0;
+    int randomY = 0;
 
     while (window.isOpen())
     {
-        sf::Time time = clock.restart(); // 시간 초기화까지 누적된 시간 반환
+        sf::Time time = clock.restart();
         deltaTime = time.asSeconds();
-        
+
+        // 이벤트 루프
+        sf::Event event;
+
         bool isLeftDown = false;
         bool isLeftUp = false;
         bool isRightDown = false;
         bool isRightUp = false;
 
-        // 이벤트 루프
-        sf::Event event;
         while (window.pollEvent(event))
         {
-            switch (event.type)
+            // 종료
+            if (event.type == sf::Event::Closed)
             {
-                case sf::Event::Closed:
-                    window.close();
-                    break;
-
-                case sf::Event::KeyPressed:
-                    switch (event.key.code)
-                    {
-                        case sf::Keyboard::Left:
-                            if (!isLeft)
-                            {
-                                isLeftDown = true;
-                            }   
-                            isLeft = true;
-                            break;
-
-                        case sf::Keyboard::Right:
-                            if (!isRight)
-                            {
-                                isRightDown = true;
-                            }
-                            isRight = true;
-                            break;
-
-                        case sf::Keyboard::Enter:
-                            isPlaying = !isPlaying;
-                            if (!isPlaying)
-                            {
-                                textMessage.setString("Press Enter to Restart!");
-                                sf::Vector2f messageOrigin;
-                                messageOrigin.x = textMessage.getLocalBounds().width * 0.5f;
-                                messageOrigin.y = textMessage.getLocalBounds().height * 0.5f;
-                                textMessage.setOrigin(messageOrigin);
-                            }
-                            else
-                            {
-                                if (remaingTime == 0.0f || sidePlayer == sideBranch[NUM_BRANCHES - 1])
-                                {
-                                    score = 0;
-                                    textScore.setString("SCORE: " + std::to_string(score));
-                                    remaingTime = 5.0f;
-                                    sideBranch[NUM_BRANCHES - 1] = Side::NONE;
-                                }
-                            }
-                            break;
-                    }
-                    break;
-                
-
-                case sf::Event::KeyReleased:
+                window.close();
+            }
+            // 키 입력
+            if (event.type == sf::Event::KeyPressed)
+            {
+                switch (event.key.code)
                 {
-                    switch (event.key.code)
+                case sf::Keyboard::Left:
+                    if (!isLeft)
                     {
-                        case sf::Keyboard::Left:
-                            isLeft = false;
-                            isLeftUp = true;
-                            break;
-                        case sf::Keyboard::Right:
-                            isRight = false;
-                            isRightUp = true;
-                            break;
+                        isLeftDown = true;
                     }
+                    isLeft = true;
+                    break;
+                case sf::Keyboard::Right:
+                    if (!isRight)
+                    {
+                        isRightDown = true;
+                    }
+                    isRight = true;
+                    break;
+                case sf::Keyboard::Return:
+                    isPlaying = !isPlaying;
+
+                    if (isPlayerDead)
+                    {
+                        isPlayerDead = false;
+                        remaingTime = 5.0f;
+                        score = 0;
+                        scoreText.setString("SCORE: " + std::to_string(score));
+                        branchSide[branchNum - 1] = Side::NONE;
+
+                        for (int i = 0; i < logNum; i++)
+                        {
+                            isActiveLog[i] = false;
+                            logSprite[i].setPosition(logInitPosition);
+                        }
+                        
+                    }
+                    else
+                    {
+                        infoText.setString("Enter to Resume!");
+                        SetTextOrigin(infoText);
+                    }
+                    break;
+                }
+            }
+            // 키 뗐을 때
+            if (event.type == sf::Event::KeyReleased)
+            {
+                switch (event.key.code)
+                {
+                case sf::Keyboard::Left:
+                    isLeft = false;
+                    break;
+                case sf::Keyboard::Right:
+                    isRight = false;
+                    break;
                 }
             }
         }
-        
 
         if (isPlaying)
         {
+            // 남은 시간 계산
             remaingTime -= deltaTime;
-
-            if (remaingTime < 0.0f)
+            if (remaingTime <= 0)
             {
-                remaingTime = 0.0f;
                 isPlaying = false;
-                isGameOver = true;
+                isPlayerDead = true;
+                infoText.setString("Enter to Restart!");
+                SetTextOrigin(infoText);
                 soundOutOfTime.play();
-                textMessage.setString("Press Enter to Restart!");
             }
+            timeBar.setSize({ timeBarWidthPerSecond * remaingTime, timeBarHeight });
 
-            timeBar.setSize({ timeBarSpeed * remaingTime, timeBarHeight});
-
-            // 업데이트
-            if (isRightDown || isLeftDown)
+            // 키 입력시
+            if (isLeftDown || isRightDown)
             {
-                isActiveLog[logIndex] = true;
-                spriteLog[logIndex].setPosition(logInitposition);
-               
+                UpdateBranches(branchSide, branchNum);
+
                 if (isLeft)
                 {
-                    sidePlayer = Side::LEFT;
-                    spriteAxe.setScale(-1, 1);
-
-                    logVelocity[logIndex] = logDirR * logSpeed;
-                }
-                if (isRightDown)
-                {
-                    sidePlayer = Side::RIGHT;
-                    spriteAxe.setScale(1, 1);
-
-                    logVelocity[logIndex] = logDirL * logSpeed;
-                }
-
-                if (logIndex < logCount - 1)
-                {
-                    logIndex++;
+                    playerSide = Side::LEFT;
+                    isActiveLog[logIdx] = true;
+                    logVelocity[logIdx] = logDirR * logSpeed;
+                    
                 }
                 else
                 {
-                    logIndex = 0;
+                    playerSide = Side::RIGHT;
+                    isActiveLog[logIdx] = true;
+                    logVelocity[logIdx] = logDirL * logSpeed;
                 }
 
-                updateBranches(sideBranch, NUM_BRANCHES);
-
-                if (sidePlayer == sideBranch[NUM_BRANCHES - 1])
+                logIdx++;
+                if (logIdx > logNum - 1)
                 {
-                    printf("맞음\n");
-                    soundDeath.play();
+                    logIdx = 0;
+                }
+
+                // 충돌 검사
+                if (playerSide == branchSide[branchNum - 1])
+                {
                     isPlaying = false;
+                    isPlayerDead = true;
+                    infoText.setString("Enter to Restart!");
+                    SetTextOrigin(infoText);
+                    soundDeath.play();
                 }
                 else
                 {
-                    soundChop.play();
                     score += 10;
-                    textScore.setString("SCORE: " + std::to_string(score));
+                    scoreText.setString("SCORE: " + std::to_string(score));
+                    soundChop.play();
                 }
             }
-            
-            if (isLeft  || isRight)
+
+            // 구름 움직임
+            for (int i = 0; i < 3; i++)
             {
-                drawAxe = true;
+                Movement(cloudSprite[i], cloudDir[i], cloudSpeed[i]);
+
+                if (IsOutOfScreen(cloudSprite[i], cloudTexture))
+                {
+                    if (RandomBool()) // 이동 방향 설정
+                    {
+                        cloudDir[i] = { -1, 0 };
+                        cloudSprite[i].setPosition(windowSizeW + cloudTexture.getSize().x, cloudTexture.getSize().y * i);
+                    }
+                    else
+                    {
+                        cloudDir[i] = { 1, 0 };
+                        cloudSprite[i].setPosition(-(int)cloudTexture.getSize().x, cloudTexture.getSize().y * i);
+                    }
+                }
+            }
+
+            // 나뭇가지 방향에 따른 Scale변경
+            for (int i = 0; i < branchNum; i++)
+            {
+                if (branchSide[i] == Side::LEFT)
+                {
+                    branchSprite[i].setScale(-1, 1);
+                }
+                if (branchSide[i] == Side::RIGHT)
+                {
+                    branchSprite[i].setScale(1, 1);
+                }
+            }
+
+            // 플레이어 방향에 따른 위치 및 Scale변경
+            if (playerSide == Side::LEFT)
+            {
+                playerSprite.setScale(-1, 1);
+                playerSprite.setPosition(treeSprite.getPosition().x + treeTexture.getSize().x * -0.5f - 150, 950);
             }
             else
             {
-                drawAxe = false;
+                playerSprite.setScale(1, 1);
+                playerSprite.setPosition(treeSprite.getPosition().x + treeTexture.getSize().x * 0.5f + 150, 950);
             }
 
-           
-
-            // 구름 이동
-            for (int i = 0; i < 3; i++)
+            // 나무 움직임
+            for (int i = 0; i < logNum; i++)
             {
-                // 화변 밖으로 나갈 경우 재 생성
-                if (IsOutOfScreen(spriteCloud[i], textureCloud))
+                // 활성화 된 나무의 위치 계산 및 설정
+                if (isActiveLog[i])
                 {
-                    SpawnSprite(spriteCloud[i], textureCloud, cloudDir[i], textureCloud.getSize().y * i);
+                    logVelocity[i] += gravity * deltaTime;
+
+                    sf::Vector2f position = logSprite[i].getPosition();
+                    position += logVelocity[i] * deltaTime;
+                    logSprite[i].setPosition(position);
                 }
 
-                // 이동
-                MoveSprite(spriteCloud[i], cloudDir[i], cloudSpeed[i]);
+                // 화면 밖으로 나갈 경우 재 설정
+                if (IsOutOfScreen(logSprite[i], logTexture))
+                {
+                    isActiveLog[i] = false;
+                    logSprite[i].setPosition(logInitPosition);
+                }
             }
 
-            // 벌 이동 (랜덤 이동)
-            sf::Vector2f beePos0 = spriteBee[0].getPosition();
+            // 벌 움직임 (무작위)
+            sf::Vector2f beePos0 = beeSprite[0].getPosition();
 
             curTime += deltaTime;
 
@@ -423,157 +435,111 @@ int main()
             }
 
             sf::Vector2f beeDir0 = { (float)randomX , (float)randomY };
-            MoveSprite(spriteBee[0], beeDir0, beeSpeed[0]);
 
+            // 밖으로 나갈 경우 랜덤 위치에 재설정
+            if (IsOutOfScreen(beeSprite[0], beeTexture))
+            {
+                bool random = RandomBool();
+                int randomHeight = RandomInt(0, 1080);
+                if (random)
+                {
+                    beeSprite[0].setPosition(beeTexture.getSize().x * -1, randomHeight);
+                    beeDir0 = { 1, 0 };
+                }
+                else
+                {
+                    beeSprite[0].setPosition(beeTexture.getSize().x + windowSizeW, randomHeight);
+                    beeDir0 = { -1, 0 };
+                }
+            }
 
-            // 벌 이동 (포물선 운동)
-            sf::Vector2f beePos1 = spriteBee[1].getPosition();
+            Movement(beeSprite[0], beeDir0, beeSpeed);
+
+            // 벌 이동 (삼각함수)
+            sf::Vector2f beePos1 = beeSprite[1].getPosition();
+            sf::Vector2f beeDir1 = { -1, 0 };
             float rd = beePos1.x * 3.14f / 180;
-            beePos1 += beeDir[1] * beeSpeed[1] * deltaTime;
+            beePos1 += beeDir1 * beeSpeed * deltaTime;
             beePos1.y = (sin(rd) * 50) + 800;
-            spriteBee[1].setPosition(beePos1);
+            beeSprite[1].setPosition(beePos1);
 
-
-            // 벌 화면 밖으로 나갈 경우 재 생성
-            for (int i = 0; i < 2; i++)
+            if (IsOutOfScreen(beeSprite[1], beeTexture))
             {
-                if (IsOutOfScreen(spriteBee[i], textureBee))
-                {
-                    SpawnSprite(spriteBee[i], textureBee, beeDir[i], 600);
-                }
-            }
-
-            // 나뭇가지 방향 변경
-            for (int i = 0; i < NUM_BRANCHES; i++)
-            {
-                switch (sideBranch[i])
-                {
-                case Side::LEFT:
-                    spriteBranch[i].setScale(-1.f, 1.f);
-                    break;
-
-                case Side::RIGHT:
-                    spriteBranch[i].setScale(1.f, 1.f);
-                    break;
-                }
-            }
-
-            // 플레이어의 위치 및 방향 설정
-            switch (sidePlayer)
-            {
-            case Side::LEFT:
-                spritePlayer.setScale(-1, 1);
-                break;
-
-            case Side::RIGHT:
-                spritePlayer.setScale(1, 1);
-                break;
-            }
-
-            for (int i = 0; i < logCount; i++)
-            {
-                if (isActiveLog[i])
-                {
-                    logVelocity[i] += gravity * deltaTime;
-
-                    sf::Vector2f position = spriteLog[i].getPosition();
-                    position += logVelocity[i] * deltaTime;
-                    spriteLog[i].setPosition(position);
-                }
-
-                if (spriteLog[i].getPosition().x > 1920 + 100 || spriteLog[i].getPosition().x < -100)
-                {
-                    spriteLog[i].setPosition(logInitposition);
-                    isActiveLog[i] = false;
-                }
-            }
-            
-        }
-        // 그리기
-        window.clear();
-
-        // World
-        window.draw(spriteBackground); // 배경
-
-        for (int i = 0; i < 3; i++) // 구름
-        {
-            window.draw(spriteCloud[i]);
-        }
-
-        window.draw(spriteTree); // 나무 기둥
-
-        for (int i = 0; i < logCount; i++)
-        {
-            if (isActiveLog[i] == true)
-            {
-                window.draw(spriteLog[i]);
+                beeSprite[1].setPosition(windowSizeW + beeTexture.getSize().x, 500);
             }
         }
         
-        for (int i = 0; i < NUM_BRANCHES; i++) // 나뭇가지
+        // 그리기
+        window.clear();
+
+        window.draw(backgroundSprite);
+        for (int i = 0; i < 3; i++)
+            window.draw(cloudSprite[i]); 
+        window.draw(treeSprite); 
+        for (int i = 0; i < branchNum; i++) 
         {
-            if (sideBranch[i] != Side::NONE)
+            if (branchSide[i] != Side::NONE)
             {
-                window.draw(spriteBranch[i]);
+                window.draw(branchSprite[i]);
             }
         }
-
-        for (int i = 0; i < 2; i++) // 벌
+        window.draw(playerSprite);
+        for (int i = 0; i < logNum; i++)
         {
-            window.draw(spriteBee[i]);
+            if (isActiveLog[i])
+            {
+                window.draw(logSprite[i]);
+            }
         }
+        for (int i = 0; i < 2; i++)
+            window.draw(beeSprite[i]);
 
-        window.draw(spritePlayer); // 플레이어
-
-        if (drawAxe)
-        {
-            window.draw(spriteAxe);
-        }
-
-        // UI
-        window.draw(textScore);
+        window.draw(scoreText);
         window.draw(timeBar);
-
         if (!isPlaying)
         {
-            window.draw(textMessage);
+            window.draw(infoText);
         }
-
+        
         window.display();
-
     }
+
     return 0;
 }
 
 // 스프라이트 이동
-void MoveSprite(sf::Sprite& target, sf::Vector2f dir, float speed)
+void Movement(sf::Sprite& sprite, sf::Vector2f dir, float speed)
 {
-    // 이동
-    sf::Vector2f pos = target.getPosition();
-    pos += dir * speed * deltaTime;
-    target.setPosition(pos);
+    sf::Vector2f spritePos = sprite.getPosition();
+    spritePos += dir * speed * deltaTime;
+    sprite.setPosition(spritePos);
 
-    // 이동 방향에 따라 바라보는 방향 변경
-    if (dir.x < 0)
+    if (dir.x > 0)
     {
-        target.setScale(1, 1);
+        sprite.setScale(-1, 1);
     }
     else
     {
-        target.setScale(-1, 1);
+        sprite.setScale(1, 1);
     }
 }
 
 // 스프라이트가 화면 밖으로 나갔는지 여부 확인
-bool IsOutOfScreen(sf::Sprite& sprite, sf::Texture texture)
+bool IsOutOfScreen(sf::Sprite& sprite, sf::Texture spriteTexture)
 {
-    float textureSizeX = texture.getSize().x;
-    if (sprite.getPosition().x < -textureSizeX || sprite.getPosition().x > textureSizeX + 1920)
+    sf::Vector2f spritePos = sprite.getPosition();
+    int spriteSize;
+
+    // 좌, 우
+    spriteSize = spriteTexture.getSize().x;
+    if (spritePos.x < -spriteSize || windowSizeW + spriteSize < spritePos.x)
     {
         return true;
     }
-    float textureSizeY = texture.getSize().y;
-    if (sprite.getPosition().y < -textureSizeY || sprite.getPosition().y > textureSizeY + 1080)
+
+    // 상, 하
+    spriteSize = spriteTexture.getSize().y;
+    if (spritePos.y < -spriteSize || windowSizeH + spriteSize < spritePos.y)
     {
         return true;
     }
@@ -581,23 +547,57 @@ bool IsOutOfScreen(sf::Sprite& sprite, sf::Texture texture)
     return false;
 }
 
-// 스프라이트 생성
-void SpawnSprite(sf::Sprite& sprite, sf::Texture texture, sf::Vector2f& dir, float posY)
+// 난수 생성 (num1 이상 num2 미만 숫자중 랜덤 반환)
+int RandomInt(int num1, int num2)
 {
-    // 랜덤 방향 설정
+    int random = rand() % num2 + num1;
+    return random;
+}
+
+// 랜덤 bool값 반환
+bool RandomBool()
+{
     float random = (float)rand() / RAND_MAX;
-    float textureSizeX = texture.getSize().x;
 
     if (random < 0.5f)
     {
-        dir.x = 1.0f; // 이동 방향 지정
-        sprite.setPosition(-textureSizeX * 2, posY); // 생성
+        return true;
     }
     else
     {
-        dir.x = -1.0f;
-        sprite.setPosition(textureSizeX + 1920, posY);
+        return false;
     }
 }
 
+// 나뭇가지 방향 업데이트
+void UpdateBranches(Side* branches, int size)
+{
+    for (int i = size - 1; i > 0; i--)
+    {
+        branches[i] = branches[i - 1];
+    }
 
+    int random = RandomInt(0, 3);
+    if (random == 0)
+    {
+        branches[0] = Side::LEFT;
+    }
+    else if (random == 1)
+    {
+        branches[0] = Side::RIGHT;
+    }
+    else
+    {
+        branches[0] = Side::NONE;
+    }
+}
+
+// 메세지 중앙
+void SetTextOrigin(sf::Text& text)
+{
+    sf::Vector2f textOrigin;
+    textOrigin.x = text.getLocalBounds().width * 0.5f;
+    textOrigin.y = text.getLocalBounds().height * 0.5f;
+    text.setOrigin(textOrigin);
+    text.setPosition(windowSizeW * 0.5f, windowSizeH * 0.5f);
+}
